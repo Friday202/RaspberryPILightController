@@ -11,3 +11,8 @@ This project implements a Graphical User Interface (GUI) in Python using the tki
 - MQTT Communication: The PC and Raspberry Pi exchange messages using MQTT, providing a reliable and efficient communication channel.
 
 ![gui2](https://github.com/Friday202/RaspberryPILightController/assets/122792037/6c3dce5c-487f-4fd3-b553-0f9555f923c6)
+
+
+
+Project example. PLease note that temperature sensor is not connected in the image below. 
+![IMG_2966](https://github.com/Friday202/RaspberryPILightController/assets/122792037/a5e4a222-535e-4d8c-8cc2-60bf93b5ecb5)
