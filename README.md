@@ -1,6 +1,6 @@
 # Raspberry PI Light Controller
 
-This project implements a Graphical User Interface (GUI) in Python using the tkinter library for controlling and monitoring light panels connected to Raspberry Pi. The Raspberry Pi communicates with three Arduino boards via serial communication to set PWM signals for light control and retrieve status information for temperature and PWM values. The communication between the PC and Raspberry Pi is achieved using MQTT, with message integrity ensured through hashing. Additionally, multithreading is implemented on the Raspberry Pi to handle communication tasks, along with three separate threads for each Arduino to read data. MQTT comunication is kept in check via PI to PC pinging. 
+This project implements a Graphical User Interface (GUI) in Python using the tkinter library for controlling and monitoring light panels connected to Raspberry Pi via Arduinos. The Raspberry Pi communicates with three Arduino boards via serial communication to set PWM signals for light control and retrieve status information for temperature and PWM values. The communication between the PC and Raspberry Pi is achieved using MQTT, with message integrity ensured through hashing. Additionally, multithreading is implemented on the Raspberry Pi to handle communication tasks, along with three separate threads for each Arduino to read data. MQTT comunication is kept in check via PI to PC pinging. 
 
 ## Features 
 
