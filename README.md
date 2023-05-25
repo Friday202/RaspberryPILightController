@@ -10,3 +10,4 @@ This project implements a Graphical User Interface (GUI) in Python using the tki
 - Serial Communication: The Raspberry Pi communicates with the three Arduino boards via serial communication.
 - MQTT Communication: The PC and Raspberry Pi exchange messages using MQTT, providing a reliable and efficient communication channel.
 
+![gui2](https://github.com/Friday202/RaspberryPILightController/assets/122792037/6c3dce5c-487f-4fd3-b553-0f9555f923c6)
