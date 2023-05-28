@@ -48,7 +48,6 @@ class GUI:
 
     def exit_clicked(self):
         # Instead of stopping script when we connect we check if on PI the script is running!
-        # PI_handler.stop_PI_scripts(self.rp_ip, self.rp_username, self.rp_password, self.rp_script)
         self.pc_client.purpose_disconnect()
         self.master.destroy()
 
@@ -96,8 +95,6 @@ class GUI:
 
     def resolve(self, error_num):
         # Try to get IP again
-        # TODO: Possible error that would require restarting raspberry pi
-
         self.get_RP_IP()
 
         if error_num == 0:
@@ -105,8 +102,10 @@ class GUI:
                 self.log_message("CRITICAL", "Fatal error you must restart PI power and restart program!" +
                                  "\nMake sure IP is correct and PI is operational. If problem persists contact support.")
                 self.master.destroy()
+                exit(1)
                 return
             self.start_and_setup_PI()
+
         if error_num == 1:
             if not PI_handler.check_broker_status(self.rp_ip, self.rp_username, self.rp_password):
                 self.log_message("ERROR", "Broker not running!")
@@ -119,10 +118,62 @@ class GUI:
                     self.log_message("CRITICAL", "Fatal error MQTT broker does not seem to turn on..." +
                                      "\nIf problem persists contact support.")
                     self.master.destroy()
+                    exit(2)
                     return
                 else:
-                    self.log_message("NOTICE", "MQTT broker is operational! Retry connection.")
+                    self.log_message("NOTICE", "MQTT broker is operational! Retrying connection.")
 
+        if error_num == 2:
+            # If this isn't accepted by PC then it means that PI has either lost connection to broker and can't
+            # reconnect,completely lost connection, broker is not operational, script encountered a runtime error and
+            # closed or PI lost power keep in mind as SSH connection might fail due to IP change, if you get is
+            # successfully from hostname then SSH must work and therefore problems lay somewhere else
+
+            # 1. Check SSH communication and IP
+            if not PI_handler.check_SSH_connection(self.rp_ip, self.rp_username, self.rp_password):
+                self.log_message("CRITICAL", "Fatal error you must restart PI power and restart program!" +
+                                 "\nMake sure IP is correct and PI is operational. If problem persists contact support.")
+                self.master.destroy()
+                exit(1)
+                return
+
+            # 2. Check broker status
+            if not PI_handler.check_broker_status(self.rp_ip, self.rp_username, self.rp_password):
+                self.log_message("ERROR", "Broker not running!")
+                self.log_message("NOTICE", "Attempting to restart MQTT broker...")
+                PI_handler.start_broker(self.rp_ip, self.rp_username, self.rp_password)
+
+                time.sleep(2)
+
+                if not PI_handler.check_broker_status(self.rp_ip, self.rp_username, self.rp_password):
+                    self.log_message("CRITICAL", "Fatal error MQTT broker does not seem to turn on..." +
+                                     "\nIf problem persists contact support.")
+                    self.master.destroy()
+                    exit(2)
+                    return
+                else:
+                    self.log_message("NOTICE", "MQTT broker is operational! Retrying connection.")
+
+            # 3. Must likely a runtime error on PI script terminate and restart it
+            self.log_message("CRITICAL", "Most likely a runtime error on PI. Restarting script!")
+            self.start_and_setup_PI()
+            time.sleep(3)
+            # Check for active script again
+            if not PI_handler.check_script_running(self.rp_ip, self.rp_username, self.rp_password, self.rp_script):
+                # Script cannot be run attempting complete PI restart is needed
+                self.log_message("CRITICAL", "Script cannot be run. Restarting PI!")
+                PI_handler.reset_PI(self.rp_ip, self.rp_username, self.rp_password)
+                # Waiting for PI to reboot
+                time.sleep(30)
+
+        if error_num == 3:
+            # PI is not operational, resetting in effect
+            # NOTE all scheduler content is LOST
+            self.log_message("CRITICAL", "Script cannot be run. Restarting PI!")
+            PI_handler.reset_PI(self.rp_ip, self.rp_username, self.rp_password)
+            time.sleep(30)
+
+        # Retry connection
         self.connect_clicked()
 
     def change_button_state_to_all_buttons(self, new_state):
@@ -148,7 +199,7 @@ class GUI:
         label.config(text=f"{value}°C")
 
     def confirm_clicked(self, panel_number):
-
+        # If not connected do not send anything
         if not self.pc_client.is_connected():
             return
 
@@ -169,7 +220,6 @@ class GUI:
             uv = self.scale_panel_3_UV.get()
         else:
             print("Internal error!")
-            exit(1)
             return
 
         self.pc_client.publish_message("pc_to_pi", f"set,{panel_number},{nir},{fir},{vis},{uv},")
@@ -181,18 +231,15 @@ class GUI:
 
     def update_timer(self):
         self.timer += 1
-        if self.timer >= 7:
-            # If this isn't accepted by PC then it means that PI has either lost connection to broker and can't reconnect,
-            # completely lost connection, broker is not operational, script encountered a runtime error and closed or PI lost
-            # power
-            # keep in mind as SSH connection might fail due to IP change, if you get is successfully from hostname then SSH
-            # must work and therefore problems lay somewhere else
+        if self.timer == 7:
+            self.resolve(2)
+        if self.timer > 8:
             self.resolve(3)
-        # Update timer each 10 seconds
+
+        # Update timer every 10 seconds
         self.master.after(10000, self.update_timer)
 
     def restart_timer(self):
-        print("Timer reset")
         self.timer = 0
 
     def validate_message(self, components):
@@ -266,10 +313,9 @@ class GUI:
             if self.l1_switch_state:
                 self.label_light_1.config(foreground="green", text="ACTIVE")
                 self.change_button_state(self.button3, "disabled")
-                self.change_button_state(self.button_sch_1, "disabled")
+                # self.change_button_state(self.button_sch_1, "disabled")
 
                 self.pc_client.publish_message("pc_to_pi", f"ON,{panel_number},{contents}")
-                print(f"ON,{panel_number},{contents}")
             else:
                 self.label_light_1.config(foreground="red", text="INACTIVE")
                 self.change_button_state(self.button3, "normal")
@@ -283,7 +329,7 @@ class GUI:
             if self.l2_switch_state:
                 self.label_light_2.config(foreground="green", text="ACTIVE")
                 self.change_button_state(self.button4, "disabled")
-                self.change_button_state(self.button_sch_2, "disabled")
+                # self.change_button_state(self.button_sch_2, "disabled")
 
                 self.pc_client.publish_message("pc_to_pi", f"ON,{panel_number},{contents}")
             else:
@@ -299,7 +345,7 @@ class GUI:
             if self.l3_switch_state:
                 self.label_light_3.config(foreground="green", text="ACTIVE")
                 self.change_button_state(self.button5, "disabled")
-                self.change_button_state(self.button_sch_3, "disabled")
+                # self.change_button_state(self.button_sch_3, "disabled")
 
                 self.pc_client.publish_message("pc_to_pi", f"ON,{panel_number},{contents}")
             else:
@@ -320,9 +366,6 @@ class GUI:
         elif panel_number == 3:
             for slot in self.slots_light3:
                 string_representation += f"{slot[0]};{slot[1]};{';'.join(str(i) for i in slot[2])},"
-
-        # Remove the trailing semicolon
-        # string_representation = string_representation.rstrip(";")
         return string_representation
 
     def clear_log(self):

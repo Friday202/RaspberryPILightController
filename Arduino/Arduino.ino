@@ -8,10 +8,10 @@
 #define UV_PIN 9
 
 // TEMP PINs
-// if multiple used on one BUS change code
+//If all temp are on same pins change code 
 #define TEMP_PIN 4
 
-#define ARDUINO_NUM 3
+#define ARDUINO_NUM 1
 #define MAX_TEMP 80 
 
 #define BAUD_RATE 9600
@@ -81,12 +81,7 @@ void loop()
       auto panel_number = contents[1].toInt(); 
 
       // Is this message for me? 
-      if (panel_number != ARDUINO_NUM)
-      {
-        String outgoingMessage = String("<NO>"); 
-        Serial.println(outgoingMessage);
-        return;
-      } 
+      if (panel_number != ARDUINO_NUM) return;       
 
       String outgoingMessage = "<status,";
 
@@ -104,7 +99,7 @@ void loop()
       } 
       else
       {
-        // Error handling 
+        // Error handling or different cases 
       }
 
       // Send the message
@@ -131,11 +126,12 @@ void loop()
 
 void constructMessage(String& message)
 { 
+  // Get temperature
   int temp = static_cast<int>(sensors.getTempCByIndex(0)); 
   // Add panel_number as well as all current values of PWM signals  
   message += String(ARDUINO_NUM) + "," + String(currentFIR) + "," + String(currentNIR) + "," + String(currentVIS) + "," + String(currentUV) + ",";
   // Add temperatures 
-  message += temp; 
+  message += String(temp) + "," + String(temp) + "," + String(temp); 
   // Add closing bracket seperated by comma 
   message += ",>"; 
 }

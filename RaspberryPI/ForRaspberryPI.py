@@ -69,10 +69,10 @@ def arduino_communication(arduino):
         data = arduino.readline().decode().rstrip()  # Read a line from the serial port
         if data:
             arduino_message = determine_Arduino_message(data)
-            print(arduino_message)
-            if len(arduino_message) != 0:
+            if len(arduino_message) == 8:
                 publish_message("pi_to_pc", f"status,{arduino_message[0]},{arduino_message[1]},{arduino_message[2]},"
-                                            f"{arduino_message[3]},{arduino_message[4]},{arduino_message[5]},75,75,")
+                                            f"{arduino_message[3]},{arduino_message[4]},{arduino_message[5]},"
+                                            f"{arduino_message[6]},{arduino_message[7]},")
 
 
 def send_message_to_arduinos(message_to_send):
@@ -95,7 +95,6 @@ def check_scheduler():
                 stop_minutes = int(slot[1])
                 if start_minutes <= time_minutes <= stop_minutes:
                     # Get values from schedule
-                    print("Should send")
                     fir = slot[2]
                     nir = slot[3]
                     vis = slot[4]
