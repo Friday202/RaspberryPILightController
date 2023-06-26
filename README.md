@@ -9,7 +9,8 @@ This project implements a Graphical User Interface (GUI) in Python using the tki
 - Scheduled Light Control: Users can schedule light values in advance, which are then sent to the Raspberry Pi which handles scheduler execution its own thread.
 - Serial Communication: The Raspberry Pi communicates with the three Arduino boards via serial communication.
 - MQTT Communication: The PC and Raspberry Pi exchange messages using MQTT, providing a reliable and efficient communication channel.
-
+  
+## Final GUI
 ![Screenshot 2023-05-25 133526](https://github.com/Friday202/RaspberryPILightController/assets/122792037/c713ae6c-08ef-4b28-bc67-659cb555493c)
 
 
